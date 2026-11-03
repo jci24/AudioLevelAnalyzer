@@ -150,7 +150,7 @@ cmake --build build/debug --target SineWaveSamples
 
 ## Peak detector: first step
 
-`audio::findSamplePeak()` in `Source/Audio/SamplePeak.*` receives one channel
+`audio::findSamplePeak()` in `Source/Analysis/SamplePeak.*` receives one channel
 of finite floating-point samples and returns the largest absolute value.
 For example, `[0.1, -0.8, 0.3]` returns `0.8`. Silence and empty buffers
 return `0`. Values above `1.0` are measured without clipping.
@@ -174,7 +174,7 @@ calls, and preservation of the input. They also run in GitHub Actions.
 
 ## RMS detector
 
-`audio::findSampleRms()` in `Source/Audio/SampleRms.*` measures the root mean
+`audio::findSampleRms()` in `Source/Analysis/SampleRms.*` measures the root mean
 square of one buffer of finite samples. It squares each sample, averages
 the squares, and takes the square root. An empty buffer returns zero.
 It reads the samples without changing them or retaining state, and uses
@@ -224,28 +224,28 @@ calibration scaling, negative dB levels below the reference, doubling pressure
 
 Detector tests use Arrange–Act–Assert: each named test prepares samples and
 an expected value, calls the detector, and checks the result. Shared reporting
-and floating-point comparisons live in `Tests/TestAssertions.h`.
+and floating-point comparisons live in `Tests/Support/TestAssertions.h`.
 
-- `Source/Main.cpp` — application lifecycle and native window.
-- `Source/MainComponent.*` — file chooser, calibration controls, background job, and results.
-- `Source/Files/AudioFileAnalysis.*` — chunked whole-file and per-channel analysis.
+- `Source/Application/Main.cpp` — application lifecycle and native window.
+- `Source/Application/MainComponent.*` — file chooser, calibration controls, background job, and results.
+- `Source/Analysis/AudioFileAnalysis.*` — chunked whole-file and per-channel analysis.
 - `Source/Playback/FilePlayer.*` — playback transport, output device, pause, and stop.
 - `Source/Playback/MeteredAudioSource.*` — rendered-audio tap and atomic publication to the UI.
-- `Source/Audio/LiveLevelMeter.*` — block peak and sample-counted 100 ms RMS windows.
-- `Source/UI/MeterBallistics.*` — UI-only release and peak-hold timing.
-- `Source/UI/LevelMeterComponent.*` — per-channel bars, hold marker, and calibrated scale.
-- `Source/Audio/SamplePeak.*` — reusable sample-peak measurement.
-- `Source/Audio/SampleRms.*` — reusable RMS measurement.
-- `Source/Audio/SoundPressureLevel.*` — RMS-to-dB-SPL conversion with explicit calibration.
-- `Tests/PeakDetectorTests.cpp` — known-input detector checks.
-- `Tests/RmsDetectorTests.cpp` — known-input RMS checks.
-- `Tests/SoundPressureLevelTests.cpp` — SPL conversion and calibration checks.
-- `Tests/AudioFileAnalysisTests.cpp` — mono/stereo WAV, partial chunks, silence,
+- `Source/Metering/LiveLevelMeter.*` — block peak and sample-counted 100 ms RMS windows.
+- `Source/Metering/MeterBallistics.*` — UI-only release and peak-hold timing.
+- `Source/Metering/LevelMeterComponent.*` — per-channel bars, hold marker, and calibrated scale.
+- `Source/Analysis/SamplePeak.*` — reusable sample-peak measurement.
+- `Source/Analysis/SampleRms.*` — reusable RMS measurement.
+- `Source/Analysis/SoundPressureLevel.*` — RMS-to-dB-SPL conversion with explicit calibration.
+- `Tests/Analysis/PeakDetectorTests.cpp` — known-input detector checks.
+- `Tests/Analysis/RmsDetectorTests.cpp` — known-input RMS checks.
+- `Tests/Analysis/SoundPressureLevelTests.cpp` — SPL conversion and calibration checks.
+- `Tests/Analysis/AudioFileAnalysisTests.cpp` — mono/stereo WAV, partial chunks, silence,
   over-full-scale values, invalid files/samples, and cancellation checks.
-- `Tests/LiveLevelMeterTests.cpp` — known signals, window timing, block-size independence, and resets.
-- `Tests/PlaybackMeterTests.cpp` — actual resampling/output tap, channel separation, reset publication,
+- `Tests/Metering/LiveLevelMeterTests.cpp` — known signals, window timing, block-size independence, and resets.
+- `Tests/Playback/PlaybackMeterTests.cpp` — actual resampling/output tap, channel separation, reset publication,
   transient capture between UI reads, end-of-file, and restart, rendered offline without an audio device.
-- `Tests/MeterBallisticsTests.cpp` — attack/release, hold duration, frame-rate independence,
+- `Tests/Metering/MeterBallisticsTests.cpp` — attack/release, hold duration, frame-rate independence,
   visual limits, and reset behavior.
 - `CMakeLists.txt` / `CMakePresets.json` — dependencies and build configuration.
 - `.vscode/` — build tasks, debugger, and editor recommendations.

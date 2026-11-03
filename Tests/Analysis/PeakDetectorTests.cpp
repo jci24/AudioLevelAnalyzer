@@ -1,5 +1,5 @@
-#include "Audio/SamplePeak.h"
-#include "TestAssertions.h"
+#include "Analysis/SamplePeak.h"
+#include "Support/TestAssertions.h"
 
 #include <array>
 

@@ -1,5 +1,5 @@
-#include "Audio/SoundPressureLevel.h"
-#include "TestAssertions.h"
+#include "Analysis/SoundPressureLevel.h"
+#include "Support/TestAssertions.h"
 
 #include <array>
 #include <cmath>

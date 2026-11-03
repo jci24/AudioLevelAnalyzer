@@ -1,6 +1,6 @@
 #include "AudioFileAnalysis.h"
-#include "Audio/SamplePeak.h"
-#include "Audio/SampleRms.h"
+#include "Analysis/SamplePeak.h"
+#include "Analysis/SampleRms.h"
 
 #include <juce_audio_formats/juce_audio_formats.h>
 

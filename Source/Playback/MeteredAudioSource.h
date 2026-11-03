@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Audio/LiveLevelMeter.h"
+#include "Metering/LiveLevelMeter.h"
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <array>
 #include <atomic>

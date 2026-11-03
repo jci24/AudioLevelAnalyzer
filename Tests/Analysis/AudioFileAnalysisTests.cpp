@@ -1,6 +1,6 @@
-#include "Files/AudioFileAnalysis.h"
-#include "Audio/SoundPressureLevel.h"
-#include "TestAssertions.h"
+#include "Analysis/AudioFileAnalysis.h"
+#include "Analysis/SoundPressureLevel.h"
+#include "Support/TestAssertions.h"
 
 #include <algorithm>
 #include <array>

@@ -1,5 +1,5 @@
-#include "UI/MeterBallistics.h"
-#include "TestAssertions.h"
+#include "Metering/MeterBallistics.h"
+#include "Support/TestAssertions.h"
 
 #include <algorithm>
 #include <array>

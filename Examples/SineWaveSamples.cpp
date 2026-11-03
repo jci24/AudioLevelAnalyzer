@@ -1,6 +1,6 @@
-#include "Audio/SamplePeak.h"
-#include "Audio/SampleRms.h"
-#include "Audio/SoundPressureLevel.h"
+#include "Analysis/SamplePeak.h"
+#include "Analysis/SampleRms.h"
+#include "Analysis/SoundPressureLevel.h"
 
 #include <array>
 #include <cmath>

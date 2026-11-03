@@ -1,5 +1,5 @@
-#include "Audio/SampleRms.h"
-#include "TestAssertions.h"
+#include "Analysis/SampleRms.h"
+#include "Support/TestAssertions.h"
 
 #include <array>
 #include <cmath>

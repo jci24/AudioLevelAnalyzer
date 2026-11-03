@@ -1,5 +1,5 @@
-#include "Audio/LiveLevelMeter.h"
-#include "TestAssertions.h"
+#include "Metering/LiveLevelMeter.h"
+#include "Support/TestAssertions.h"
 
 #include <algorithm>
 #include <array>

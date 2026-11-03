@@ -1,4 +1,4 @@
-#include "MainComponent.h"
+#include "Application/MainComponent.h"
 
 class AudioLevelAnalyzerApplication final : public juce::JUCEApplication
 {

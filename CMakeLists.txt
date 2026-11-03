@@ -3,14 +3,14 @@ cmake_minimum_required(VERSION 3.24)
 project(AudioLevelAnalyzer VERSION 0.1.0 LANGUAGES C CXX)
 
 add_library(AudioAnalysis
-    Source/Audio/LiveLevelMeter.cpp
-    Source/Audio/SamplePeak.cpp
-    Source/Audio/SampleRms.cpp
-    Source/Audio/SoundPressureLevel.cpp)
+    Source/Metering/LiveLevelMeter.cpp
+    Source/Analysis/SamplePeak.cpp
+    Source/Analysis/SampleRms.cpp
+    Source/Analysis/SoundPressureLevel.cpp)
 target_include_directories(AudioAnalysis PUBLIC Source)
 target_compile_features(AudioAnalysis PUBLIC cxx_std_20)
 
-add_library(MeterDisplay Source/UI/MeterBallistics.cpp)
+add_library(MeterDisplay Source/Metering/MeterBallistics.cpp)
 target_include_directories(MeterDisplay PUBLIC Source)
 target_compile_features(MeterDisplay PUBLIC cxx_std_20)
 
@@ -20,24 +20,29 @@ target_link_libraries(SineWaveSamples PRIVATE AudioAnalysis)
 
 include(CTest)
 if(BUILD_TESTING)
-    add_executable(PeakDetectorTests Tests/PeakDetectorTests.cpp)
+    add_executable(PeakDetectorTests Tests/Analysis/PeakDetectorTests.cpp)
     target_link_libraries(PeakDetectorTests PRIVATE AudioAnalysis)
+    target_include_directories(PeakDetectorTests PRIVATE Tests)
     add_test(NAME PeakDetectorTests COMMAND PeakDetectorTests)
 
-    add_executable(RmsDetectorTests Tests/RmsDetectorTests.cpp)
+    add_executable(RmsDetectorTests Tests/Analysis/RmsDetectorTests.cpp)
     target_link_libraries(RmsDetectorTests PRIVATE AudioAnalysis)
+    target_include_directories(RmsDetectorTests PRIVATE Tests)
     add_test(NAME RmsDetectorTests COMMAND RmsDetectorTests)
 
-    add_executable(SoundPressureLevelTests Tests/SoundPressureLevelTests.cpp)
+    add_executable(SoundPressureLevelTests Tests/Analysis/SoundPressureLevelTests.cpp)
     target_link_libraries(SoundPressureLevelTests PRIVATE AudioAnalysis)
+    target_include_directories(SoundPressureLevelTests PRIVATE Tests)
     add_test(NAME SoundPressureLevelTests COMMAND SoundPressureLevelTests)
 
-    add_executable(LiveLevelMeterTests Tests/LiveLevelMeterTests.cpp)
+    add_executable(LiveLevelMeterTests Tests/Metering/LiveLevelMeterTests.cpp)
     target_link_libraries(LiveLevelMeterTests PRIVATE AudioAnalysis)
+    target_include_directories(LiveLevelMeterTests PRIVATE Tests)
     add_test(NAME LiveLevelMeterTests COMMAND LiveLevelMeterTests)
 
-    add_executable(MeterBallisticsTests Tests/MeterBallisticsTests.cpp)
+    add_executable(MeterBallisticsTests Tests/Metering/MeterBallisticsTests.cpp)
     target_link_libraries(MeterBallisticsTests PRIVATE MeterDisplay)
+    target_include_directories(MeterBallisticsTests PRIVATE Tests)
     add_test(NAME MeterBallisticsTests COMMAND MeterBallisticsTests)
 endif()
 
@@ -50,23 +55,25 @@ FetchContent_Declare(JUCE
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(JUCE)
 
-add_library(AudioFileAnalysis Source/Files/AudioFileAnalysis.cpp)
+add_library(AudioFileAnalysis Source/Analysis/AudioFileAnalysis.cpp)
 target_link_libraries(AudioFileAnalysis
     PUBLIC AudioAnalysis
     PRIVATE juce::juce_audio_formats juce::juce_recommended_config_flags)
 target_compile_definitions(AudioFileAnalysis PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
 
 if(BUILD_TESTING)
-    add_executable(AudioFileAnalysisTests Tests/AudioFileAnalysisTests.cpp)
+    add_executable(AudioFileAnalysisTests Tests/Analysis/AudioFileAnalysisTests.cpp)
     target_link_libraries(AudioFileAnalysisTests PRIVATE AudioFileAnalysis)
+    target_include_directories(AudioFileAnalysisTests PRIVATE Tests)
     add_test(NAME AudioFileAnalysisTests COMMAND AudioFileAnalysisTests)
 
     add_executable(PlaybackMeterTests
-        Tests/PlaybackMeterTests.cpp
+        Tests/Playback/PlaybackMeterTests.cpp
         Source/Playback/MeteredAudioSource.cpp)
     target_link_libraries(PlaybackMeterTests PRIVATE
         AudioAnalysis juce::juce_audio_devices juce::juce_recommended_config_flags)
     target_compile_definitions(PlaybackMeterTests PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
+    target_include_directories(PlaybackMeterTests PRIVATE Tests)
     add_test(NAME PlaybackMeterTests COMMAND PlaybackMeterTests)
 endif()
 
@@ -78,12 +85,13 @@ juce_add_gui_app(AudioLevelAnalyzer
     NEEDS_CURL FALSE)
 
 target_sources(AudioLevelAnalyzer PRIVATE
-    Source/Main.cpp
+    Source/Application/Main.cpp
     Source/Playback/FilePlayer.cpp
     Source/Playback/MeteredAudioSource.cpp
-    Source/UI/LevelMeterComponent.cpp
-    Source/MainComponent.cpp
-    Source/MainComponent.h)
+    Source/Metering/LevelMeterComponent.cpp
+    Source/Application/AnalyzerView.cpp
+    Source/Application/MainComponent.cpp
+    Source/Application/MainComponent.h)
 
 target_compile_features(AudioLevelAnalyzer PRIVATE cxx_std_20)
 target_compile_definitions(AudioLevelAnalyzer PRIVATE
