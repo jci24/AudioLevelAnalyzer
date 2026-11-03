@@ -18,3 +18,7 @@ jobs:
         run: cmake --preset debug
       - name: Build
         run: cmake --build --preset debug
+      - name: Build learning example and detector checks
+        run: cmake --build build/debug --target SineWaveSamples PeakDetectorTests RmsDetectorTests SoundPressureLevelTests AudioFileAnalysisTests LiveLevelMeterTests PlaybackMeterTests MeterBallisticsTests --parallel 4
+      - name: Check audio measurements
+        run: ctest --test-dir build/debug --output-on-failure
