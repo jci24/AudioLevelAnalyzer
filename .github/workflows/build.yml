@@ -10,15 +10,20 @@ permissions:
 jobs:
   macos:
     runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [debug, release]
+    name: macOS / ${{ matrix.preset }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install build tools
         run: brew install cmake ninja
       - name: Configure
-        run: cmake --preset debug
-      - name: Build
-        run: cmake --build --preset debug
-      - name: Build learning example and detector checks
-        run: cmake --build build/debug --target SineWaveSamples PeakDetectorTests RmsDetectorTests SoundPressureLevelTests AudioFileAnalysisTests LiveLevelMeterTests PlaybackMeterTests MeterBallisticsTests --parallel 4
-      - name: Check audio measurements
-        run: ctest --test-dir build/debug --output-on-failure
+        run: cmake --preset ${{ matrix.preset }}
+      - name: Build app, example, and tests
+        run: cmake --build build/${{ matrix.preset }} --parallel 4
+      - name: Run tests
+        run: ctest --preset ${{ matrix.preset }}

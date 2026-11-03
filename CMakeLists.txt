@@ -108,3 +108,16 @@ target_link_libraries(AudioLevelAnalyzer PRIVATE
     juce::juce_gui_basics
     juce::juce_recommended_config_flags
     juce::juce_recommended_warning_flags)
+
+option(ANALYZER_BUILD_DEMO_RENDERER "Build the offline portfolio media renderer" OFF)
+if(ANALYZER_BUILD_DEMO_RENDERER)
+    add_executable(RenderDemo
+        Tools/RenderDemo.cpp
+        Source/Application/AnalyzerView.cpp
+        Source/Metering/LevelMeterComponent.cpp
+        Source/Playback/MeteredAudioSource.cpp)
+    target_link_libraries(RenderDemo PRIVATE
+        AudioFileAnalysis MeterDisplay juce::juce_gui_basics
+        juce::juce_audio_devices juce::juce_audio_formats juce::juce_recommended_config_flags)
+    target_compile_definitions(RenderDemo PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
+endif()

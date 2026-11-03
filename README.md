@@ -1,264 +1,107 @@
 # Audio Level Analyzer
 
-A JUCE / C++ learning and portfolio project by Jaime Castresana.
+[![Build](https://github.com/jci24/AudioLevelAnalyzer/actions/workflows/build.yml/badge.svg)](https://github.com/jci24/AudioLevelAnalyzer/actions/workflows/build.yml)
 
-**Status: audio-file analysis prototype.** The JUCE app loads an audio file and
-shows a whole-file peak/RMS summary beside live vertical output meters.
-Digital levels are the default; SPL modes require an explicit calibration factor.
-The detectors also have a standalone learning example.
-Loaded files can be played, paused, and stopped. Microphone capture is not implemented.
+A native **JUCE 9 / C++20** desktop project for analysing audio files and monitoring
+peak and RMS levels during playback. Built as a personal audio/software engineering
+learning project, with an emphasis on understandable measurement code and testable behavior.
 
-## Analyse an audio file
+![Offline-rendered analyzer UI with a synthetic reference signal](docs/media/analyzer.png)
 
-1. Launch the app and click **Load audio file...**.
-2. Choose a file from JUCE's available formats (including WAV, AIFF, FLAC, Ogg,
-   and MP3; additional formats depend on the platform).
-3. Leave **Reference** on **Digital (dBFS)** for ordinary files.
-4. For SPL, choose **Calibrated SPL** and enter **Pa / unit** for
-   the recording chain and gain. The same factor applies to every channel.
-   **Simulated SPL** explicitly uses an assumed factor (`1.0` initially).
+<details>
+<summary>Watch the signal-response demo</summary>
 
-Digital peak and RMS are both calculated as `20 * log10(magnitude / 1.0)`.
-This uses the mathematical RMS reference: a full-scale sine has 0 dBFS peak
-and approximately -3.01 dBFS RMS. This is not the AES17 sine-referenced RMS
-convention. Calibration controls are only shown in SPL modes. Measurement
-details are available in tooltips, with inline messages for errors.
+![Offline-rendered playback meters responding to a synthetic stereo signal](docs/media/demo.gif)
 
-Use **Play** to start or resume, **Pause** to keep the current position, and
-**Stop** to return to the beginning. After reaching the end, Play restarts
-the file. Loading another file stops and replaces the previous one. Controls
-are disabled until a valid file has been analysed and opened for playback.
-The position display shows elapsed and total seconds.
+</details>
 
-Playback uses the default audio output and JUCE's buffered file transport,
-with sample-rate conversion when needed. The output device is opened on the
-first Play; no microphone channels are requested. Mono/stereo playback is
-supported (for files with more channels, only the first two are played).
-Playback and calibration do not change the stored whole-file measurements;
-the SPL readings describe the file under the supplied calibration, not the
-sound pressure produced by the current speaker or volume setting.
+The media is an offline-rendered preview using the same JUCE view and measurement
+code as the app, not a screen recording. [Reproduce the preview](Tools/README.md).
 
-The main peak is the largest sample magnitude across every channel and the
-entire file. Main RMS combines the energy of all channel samples equally;
-channels are not mixed together. The bottom per-channel text box has been
-removed to keep the window focused on the summary and live meters.
-Both pressure levels are unweighted and referenced to 20 micropascals.
-Peak is sample peak, not reconstructed true peak. Silence displays `-inf` in
-the selected reference unit.
+## What it does
 
-Analysis reads 4096-frame chunks on a background thread. The final partial
-chunk uses its actual sample count, so whole-file RMS is energy-weighted,
-not an arithmetic average of chunk RMS readings. Calibration edits update
-the displayed results without rereading the file. Empty, corrupt, unreadable,
-and non-finite audio produce errors instead of partial results. Closing the
-window requests cancellation and joins the worker before destroying the UI.
+- Loads audio files and calculates whole-file sample peak and RMS in bounded chunks.
+- Plays, pauses, and stops files with sample-rate conversion through JUCE.
+- Displays per-output vertical meters with 100 ms RMS windows, transient peak capture,
+  a one-second peak hold, and time-based visual release.
+- Defaults to digital levels; supports explicitly calibrated or simulated SPL.
 
-## Live playback meters
+**SPL needs calibration.** An ordinary WAV or MP3 does not establish physical sound
+pressure. Simulated SPL uses an assumed pascals-per-sample factor and is labeled as such.
+Playback readings describe the digital output stream, not sound pressure at your ears.
 
-Press Play to see peak and RMS bars and numbers for up to two playback output channels.
-The audio tap runs after transport sample-rate conversion and before device
-output. Mono may appear on both output channels. These are digital stream
-measurements; even in SPL mode they do not measure sound at the listener.
+## Build and run on macOS
 
-Peak captures the largest magnitude between UI reads, so a spike is retained
-even if quieter blocks follow before the next display refresh. The audio
-thread clears its pending peak only after the UI acknowledges the publication;
-if they overlap, retaining it for another refresh avoids losing a transient.
-RMS uses consecutive, non-overlapping
-100 ms windows at the device sample rate, carrying squared samples across
-block boundaries. The most recently completed RMS window is displayed until
-the next completes. The initial RMS reading stays blank until the first window completes.
-
-The UI refreshes at 30 Hz. Pause, stop, end-of-file, and file replacement clear
-the live readings; resuming starts a fresh RMS window. Whole-file readings stay
-separate.
-
-Each output has separate vertical Peak and RMS bars, with numeric values below
-and a shared scale beside them. Bars rise immediately and fall at
-24 dB per second. A white peak marker holds for 1 second after the last equal
-or higher peak, then falls at 12 dB per second. These are visual choices, not
-standardised sound-level-meter time weightings. Actual numeric peak/RMS readings
-are not smoothed by this display logic. Timing uses elapsed seconds rather
-than assuming a fixed frame rate.
-
-The visual scale covers -60 to +6 dB relative to digital magnitude 1.0. In SPL
-mode the scale labels shift by the supplied calibration offset. Values outside
-the visual range remain visible in the numeric readings. Both meters use fixed
-colour zones: green below -24 dBFS, gradually yellow at -12 dBFS, then red at
-0 dBFS and above. Those colours describe digital headroom, not acoustic
-exposure thresholds, including when the scale is displayed in SPL.
-
-The added measurement callback allocates no memory, draws no UI, performs no
-file access, and adds no mutex. Audio-thread-owned accumulators publish via
-lock-free atomics, with publication/acknowledgement counters for transient capture
-and no compare-and-swap retry loop. Reset generations hide stale publications while the audio
-thread clears its own state. JUCE handles decoding/read-ahead and transport
-synchronisation separately.
-
-## Development setup (macOS + Visual Studio Code)
-
-- Xcode and its command-line tools (`xcode-select -p` should point to Xcode).
-- CMake 3.24 or newer, Ninja, and a C++20 compiler.
-- Visual Studio Code with C/C++, CMake Tools, and CodeLLDB (recommended in this folder).
-
-Install build tools with Homebrew:
+Requirements: Xcode with command-line tools, CMake 3.24+, and Ninja.
+The first configure downloads a pinned, SHA-256-verified JUCE source archive.
 
 ```sh
 brew install cmake ninja
-```
-
-Open this folder in VS Code. Select the **debug** configure preset when prompted.
-Press **Cmd+Shift+B** to configure and build; press **F5** to build and debug.
-For Release, run **Tasks: Run Task → Build Release**.
-If VS Code was open before installing build tools, restart it so it picks up the updated PATH.
-
-Or build from a terminal in the project root:
-
-```sh
 cmake --preset debug
 cmake --build --preset debug
 open "build/debug/AudioLevelAnalyzer_artefacts/Debug/Audio Level Analyzer.app"
 ```
 
-Release build:
+In VS Code, open this folder and install the recommended C/C++, CMake Tools, and
+CodeLLDB extensions. **Cmd+Shift+B** builds; **F5** builds and debugs. Restart VS Code
+if it was open before installing the build tools. No Projucer setup is needed.
+
+Click **Open...**, choose a file, then use **Play**, **Pause**, and **Stop**.
+The reference selector defaults to **Digital (dBFS)**. Calibration controls appear
+only in SPL modes. Hover over controls and measurements for their definitions.
+
+To reproduce the demo without downloading third-party audio:
 
 ```sh
-cmake --preset release
-cmake --build --preset release
-open "build/release/AudioLevelAnalyzer_artefacts/Release/Audio Level Analyzer.app"
+python3 Tools/generate_demo.py
 ```
 
-The first configure downloads JUCE 9.0.5 automatically. Its source archive is
-pinned to a release commit and checked with SHA-256. No Projucer or separate
-JUCE installation is required. Build output and downloaded dependencies stay
-under `build/` and are excluded from Git.
+Open `build/demo/Demo.wav`. Its stereo 440 Hz tones step through several amplitudes
+and silence; the right channel is half the left channel's amplitude.
+The rendered image and animation use this synthetic file.
 
-## Sine-wave learning example
-
-`Examples/SineWaveSamples.cpp` generates a 1 kHz sine wave at
-48 kHz, stores it in a 512-sample mono `float` buffer (about 10.67 ms), and
-prints its measured sample peak, RMS, and simulated dB SPL. It does not play audio.
-This console example is separate from the file-analysis window.
-
-Run from the VS Code terminal in the project root:
+## Verify the measurements
 
 ```sh
 cmake --preset debug
-cmake --build build/debug --target SineWaveSamples
-./build/debug/SineWaveSamples
+cmake --build --preset tests
+ctest --preset debug
 ```
 
-## Peak detector: first step
+Seven CTest suites cover known peak/RMS values, calibration, file-reading boundaries,
+stereo energy, sample-rate-dependent windows, transient capture, playback resets,
+and peak-hold/release timing. Playback-meter tests render the real JUCE transport and
+resampler offline, without opening an audio device. Tests follow Arrange–Act–Assert.
+GitHub Actions builds and tests both Debug and Release on macOS.
 
-`audio::findSamplePeak()` in `Source/Analysis/SamplePeak.*` receives one channel
-of finite floating-point samples and returns the largest absolute value.
-For example, `[0.1, -0.8, 0.3]` returns `0.8`. Silence and empty buffers
-return `0`. Values above `1.0` are measured without clipping.
+## Code tour
 
-The detector does not modify the samples, allocate memory, or remember a
-previous buffer's peak. The sine-wave example uses this same function.
-The file analyser reuses this function to track the peak across chunks.
-Live meters and true-peak estimation are not implemented.
+| Folder | Responsibility |
+| --- | --- |
+| [`Source/Application`](Source/Application) | Native app entry point, use-case coordination, and view layout |
+| [`Source/Analysis`](Source/Analysis) | Sample peak/RMS, SPL conversion, and whole-file analysis |
+| [`Source/Playback`](Source/Playback) | File transport, output device, and audio-thread meter publication |
+| [`Source/Metering`](Source/Metering) | Windowed measurement, visual ballistics, and meter drawing |
+| [`Tests`](Tests) | Matching analysis, playback, and metering checks |
+| [`Examples`](Examples) | Standalone sine-wave sample experiment |
 
-Build and run the known-input checks:
+Start with [`MainComponent`](Source/Application/MainComponent.cpp) for the application
+flow. [`AnalyzerView`](Source/Application/AnalyzerView.cpp) owns widget setup and layout;
+measurement functions do not depend on the window.
 
-```sh
-cmake --preset debug
-cmake --build build/debug --target PeakDetectorTests RmsDetectorTests SoundPressureLevelTests AudioFileAnalysisTests LiveLevelMeterTests PlaybackMeterTests MeterBallisticsTests
-ctest --test-dir build/debug --output-on-failure -V
-```
+- [Architecture and thread ownership](docs/architecture.md)
+- [Measurement definitions and calibration](docs/measurements.md)
+- [Questions to understand and explain the design](docs/design-walkthrough.md)
 
-The checks cover silence, empty buffers, negative and positive peaks,
-first/last positions, a single sample, magnitudes above one, independent
-calls, and preservation of the input. They also run in GitHub Actions.
+## Scope and limitations
 
-## RMS detector
-
-`audio::findSampleRms()` in `Source/Analysis/SampleRms.*` measures the root mean
-square of one buffer of finite samples. It squares each sample, averages
-the squares, and takes the square root. An empty buffer returns zero.
-It reads the samples without changing them or retaining state, and uses
-double precision for squaring and accumulation.
-
-Peak asks how large the biggest sample is. RMS describes the signal's
-effective level across the whole buffer. For example, `[1, 0, 0, 0]`
-has peak `1` and RMS `0.5`, while `[1, -1, 1, -1]` has peak `1` and RMS `1`.
-RMS is not a perceptually weighted loudness measurement.
-
-Our 0.5-amplitude sine has peak `0.5` and RMS about `0.352156` over the
-512-sample buffer. Over complete cycles its RMS would be `0.5 / sqrt(2)`,
-about `0.353553`. The partial final cycle accounts for the difference.
-
-The RMS checks include silence, empty buffers, negative values, sustained
-levels versus isolated spikes, a four-point sine cycle, magnitudes above
-one, very large/small finite values, independent calls, and unchanged input.
-
-## Sound pressure level (dB SPL)
-
-`audio::rmsToDbSpl(rms, pascalsPerSampleUnit)` converts RMS sample magnitude
-to unweighted RMS sound pressure level relative to 20 micropascals in air:
-
-```text
-RMS pressure (Pa) = RMS sample magnitude × pascals per sample unit
-dB SPL = 20 × log10(RMS pressure / 0.000020 Pa)
-```
-
-The calibration argument is required. The learning example explicitly assumes
-`1 sample unit = 1 Pa` and labels the result **simulated SPL**. Its sine wave
-therefore produces about `84.9141 dB SPL`. This is not a measurement of sound
-in the room. Real microphone measurements require a calibrated recording
-chain with unchanged gain; ordinary audio files alone do not establish SPL.
-
-Silence returns negative infinity, not 0 dB SPL: 0 dB SPL represents the
-reference pressure. Negative RMS, nonpositive calibration, and nonfinite
-inputs throw `std::invalid_argument`. This step does not add frequency/time
-weighting or a calibrated sound-level-meter implementation. The file UI also
-applies the same logarithmic pressure conversion to the sample peak magnitude.
-
-AAA checks cover 20 micropascals → 0 dB SPL, 1 Pa → about 93.98 dB SPL,
-calibration scaling, negative dB levels below the reference, doubling pressure
-→ about +6.02 dB, silence, and invalid inputs. Reference:
-[NI's microphone measurement guide](https://www.ni.com/en/shop/data-acquisition/sensor-fundamentals/measuring-sound-with-microphones.html).
-
-## Project structure
-
-Detector tests use Arrange–Act–Assert: each named test prepares samples and
-an expected value, calls the detector, and checks the result. Shared reporting
-and floating-point comparisons live in `Tests/Support/TestAssertions.h`.
-
-- `Source/Application/Main.cpp` — application lifecycle and native window.
-- `Source/Application/MainComponent.*` — file chooser, calibration controls, background job, and results.
-- `Source/Analysis/AudioFileAnalysis.*` — chunked whole-file and per-channel analysis.
-- `Source/Playback/FilePlayer.*` — playback transport, output device, pause, and stop.
-- `Source/Playback/MeteredAudioSource.*` — rendered-audio tap and atomic publication to the UI.
-- `Source/Metering/LiveLevelMeter.*` — block peak and sample-counted 100 ms RMS windows.
-- `Source/Metering/MeterBallistics.*` — UI-only release and peak-hold timing.
-- `Source/Metering/LevelMeterComponent.*` — per-channel bars, hold marker, and calibrated scale.
-- `Source/Analysis/SamplePeak.*` — reusable sample-peak measurement.
-- `Source/Analysis/SampleRms.*` — reusable RMS measurement.
-- `Source/Analysis/SoundPressureLevel.*` — RMS-to-dB-SPL conversion with explicit calibration.
-- `Tests/Analysis/PeakDetectorTests.cpp` — known-input detector checks.
-- `Tests/Analysis/RmsDetectorTests.cpp` — known-input RMS checks.
-- `Tests/Analysis/SoundPressureLevelTests.cpp` — SPL conversion and calibration checks.
-- `Tests/Analysis/AudioFileAnalysisTests.cpp` — mono/stereo WAV, partial chunks, silence,
-  over-full-scale values, invalid files/samples, and cancellation checks.
-- `Tests/Metering/LiveLevelMeterTests.cpp` — known signals, window timing, block-size independence, and resets.
-- `Tests/Playback/PlaybackMeterTests.cpp` — actual resampling/output tap, channel separation, reset publication,
-  transient capture between UI reads, end-of-file, and restart, rendered offline without an audio device.
-- `Tests/Metering/MeterBallisticsTests.cpp` — attack/release, hold duration, frame-rate independence,
-  visual limits, and reset behavior.
-- `CMakeLists.txt` / `CMakePresets.json` — dependencies and build configuration.
-- `.vscode/` — build tasks, debugger, and editor recommendations.
-- `.github/workflows/build.yml` — macOS build on pushes and pull requests.
-
-The build uses CMake's JUCE integration, following the
-[official JUCE CMake documentation](https://github.com/juce-framework/JUCE/blob/9.0.5/docs/CMake%20API.md).
-The app links GUI, audio-file decoding, and output-device modules; it does not request microphone access.
-The VS Code launch configuration currently targets macOS. Other platforms have
-not been validated.
+This is a macOS-validated prototype, not a certified sound level meter. It measures
+sample peak, not reconstructed true peak. RMS uses an unweighted mathematical reference,
+not LUFS or standardised sound-level-meter time weightings. There is no microphone input
+or seeking UI. More than two file channels can be analysed, but playback uses the first two.
+Other operating systems, broad device compatibility, and production reliability are not validated.
 
 ## License
 
-This project is licensed under AGPL-3.0-only; see [LICENSE](LICENSE).
-JUCE is a separately licensed dependency, available under AGPLv3 or a commercial
-license. See the [JUCE license](https://github.com/juce-framework/JUCE/blob/9.0.5/LICENSE.md).
+[AGPL-3.0-only](LICENSE). JUCE is a separately licensed dependency; see its
+[license](https://github.com/juce-framework/JUCE/blob/9.0.5/LICENSE.md).
