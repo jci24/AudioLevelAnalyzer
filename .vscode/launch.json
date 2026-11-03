@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Audio Level Analyzer",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/debug/AudioLevelAnalyzer_artefacts/Debug/Audio Level Analyzer.app/Contents/MacOS/Audio Level Analyzer",
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Build Debug"
+    }
+  ]
+}
